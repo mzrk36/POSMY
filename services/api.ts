@@ -1,66 +1,98 @@
-import { Product, Sale } from '../types';
+import { Product, Sale, SaleItem, User, UserRole } from '../types';
 
-// --- MOCK DATABASE ---
-let mockProducts: Product[] = [
-    { id: '1', name: 'Burger', price: 5.99, stock: 50 },
-    { id: '2', name: 'Fries', price: 2.49, stock: 100 },
-    { id: '3', name: 'Coke', price: 1.99, stock: 75 },
-    { id: '4', name: 'Iced Tea', price: 2.29, stock: 60 },
-    { id: '5', name: 'Coffee', price: 1.50, stock: 80 },
+// --- IN-MEMORY DATABASE ---
+
+let products: Product[] = [
+    { id: 'prod_1', name: 'Classic Burger', price: 8.99, stock: 50 },
+    { id: 'prod_2', name: 'Cheese Burger', price: 9.99, stock: 40 },
+    { id: 'prod_3', name: 'Bacon Burger', price: 10.99, stock: 30 },
+    { id: 'prod_4', name: 'Fries', price: 3.49, stock: 100 },
+    { id: 'prod_5', name: 'Coke', price: 1.99, stock: 80 },
+    { id: 'prod_6', name: 'Sprite', price: 1.99, stock: 75 },
+    { id: 'prod_7', name: 'Onion Rings', price: 4.99, stock: 45 },
+    { id: 'prod_8', name: 'Milkshake', price: 5.49, stock: 25 },
 ];
+let sales: Sale[] = [];
+let users: User[] = [];
 
-let mockSales: Sale[] = [];
-let nextSaleId = 1;
+const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+// --- USER MANAGEMENT ---
 
-// --- API FUNCTIONS ---
+export const getUsers = async (): Promise<User[]> => {
+    await simulateDelay(50);
+    return [...users];
+};
 
-// PRODUCTS
+export const addUser = async (user: Omit<User, 'id'>): Promise<User> => {
+    await simulateDelay(50);
+    const newUser: User = { ...user, id: `user_${crypto.randomUUID()}` };
+    users.push(newUser);
+    return newUser;
+};
+
+export const updateUser = async (user: User): Promise<User> => {
+    await simulateDelay(50);
+    users = users.map(u => u.id === user.id ? user : u);
+    return user;
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+    await simulateDelay(50);
+    users = users.filter(u => u.id !== userId);
+};
+
+export const loginUser = async (pin: string): Promise<User | null> => {
+    await simulateDelay(100);
+    const user = users.find(u => u.pin === pin);
+    return user ? {...user} : null;
+}
+
+// --- PRODUCT MANAGEMENT ---
 export const getProducts = async (): Promise<Product[]> => {
-    await delay(100);
-    return [...mockProducts];
+    await simulateDelay(50);
+    return [...products].sort((a,b) => a.name.localeCompare(b.name));
 };
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
-    await delay(100);
-    const newProduct: Product = {
-        ...product,
-        id: Date.now().toString(),
-    };
-    mockProducts.push(newProduct);
+    await simulateDelay(50);
+    const newProduct: Product = { ...product, id: `prod_${crypto.randomUUID()}` };
+    products.push(newProduct);
     return newProduct;
 };
 
 export const updateProduct = async (product: Product): Promise<Product> => {
-    await delay(100);
-    mockProducts = mockProducts.map(p => p.id === product.id ? product : p);
+    await simulateDelay(50);
+    products = products.map(p => p.id === product.id ? product : p);
     return product;
 };
 
-// SALES
+// --- SALES MANAGEMENT ---
 export const getSales = async (): Promise<Sale[]> => {
-    await delay(100);
-    return [...mockSales];
+    await simulateDelay(50);
+    return [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-export const addSale = async (sale: Omit<Sale, 'id' | 'date'>): Promise<Sale> => {
-    await delay(200);
+export const addSale = async (saleData: Omit<Sale, 'id' | 'date'>, userId: string): Promise<Sale> => {
+    await simulateDelay(150);
 
-    // Simulate stock decrement
-    sale.items.forEach(item => {
-        const productIndex = mockProducts.findIndex(p => p.id === item.productId);
-        if (productIndex !== -1) {
-            mockProducts[productIndex].stock -= item.quantity;
+    // 1. Decrement stock (transaction simulation)
+    for (const item of saleData.items) {
+        const product = products.find(p => p.id === item.productId);
+        if (!product || product.stock < item.quantity) {
+            throw new Error(`Not enough stock for ${item.productName}`);
         }
-    });
-
+        product.stock -= item.quantity;
+    }
+    
+    // 2. Create the sale record
     const newSale: Sale = {
-        ...sale,
-        id: `sale-${nextSaleId++}`,
+        ...saleData,
+        id: `sale_${crypto.randomUUID()}`,
         date: new Date().toISOString(),
     };
 
-    mockSales.push(newSale);
+    sales.push(newSale);
+    
     return newSale;
 };
