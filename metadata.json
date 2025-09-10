@@ -1,0 +1,5 @@
+{
+  "name": "AI-Powered POS & Inventory Management",
+  "description": "A comprehensive web-based Point-of-Sale (POS) and inventory management system designed for small businesses. It features real-time inventory tracking, sales processing, reporting, and an AI assistant powered by Gemini for smart insights and suggestions.",
+  "requestFramePermissions": []
+}
