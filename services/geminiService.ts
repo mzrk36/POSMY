@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Product, Sale } from '../types';
 
@@ -7,6 +6,12 @@ import { Product, Sale } from '../types';
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateInsights = async (query: string, products: Product[], sales: Sale[]): Promise<string> => {
+    // Add a check to ensure the API key is available.
+    if (!process.env.API_KEY) {
+        console.error("Gemini API key is not configured.");
+        return "The AI Assistant is not configured correctly. A Gemini API key is required in the environment variables.";
+    }
+
     const model = 'gemini-2.5-flash';
 
     const prompt = `
@@ -38,6 +43,16 @@ export const generateInsights = async (query: string, products: Product[], sales
         return response.text;
     } catch (error) {
         console.error("Error generating insights from Gemini:", error);
-        return "Sorry, I encountered an error while analyzing the data. Please check the console for details.";
+        
+        let errorMessage = "Sorry, I encountered an error while analyzing the data.";
+        if (error instanceof Error) {
+            // Provide more specific feedback for common API key issues
+            if (error.message.includes('API key not valid')) {
+                errorMessage = "The Gemini API key is not valid. Please check your configuration.";
+            } else {
+                 errorMessage += ` Please check the console for details.`;
+            }
+        }
+        return errorMessage;
     }
 };
